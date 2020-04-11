@@ -25,55 +25,6 @@
 
         <v-btn class="mx-0" depressed @click="comment">提出</v-btn>
       </v-card-actions>
-      <v-container style="max-width: 600px;">
-        <v-timeline dense clipped>
-          <v-slide-x-transition group>
-            <v-timeline-item
-              v-for="event in timeline"
-              :key="event.id"
-              class="mb-4"
-              color="pink"
-              small
-            >
-              <v-row justify="space-between">
-                <v-col cols="7" v-text="event.text"></v-col>
-                <v-col class="text-right" cols="5" v-text="event.time"></v-col>
-              </v-row>
-            </v-timeline-item>
-          </v-slide-x-transition>
-
-          <v-timeline-item class="mb-4" color="light-green" small>
-            <v-row justify="space-between">
-              <v-col cols="7">提出 2/3回</v-col>
-              <v-col class="text-right" cols="5">21:30 JST</v-col>
-            </v-row>
-          </v-timeline-item>
-
-          <v-timeline-item fill-dot class="white--text mb-12" color="grey" large>
-            <template v-slot:icon>
-              <span>bot</span>
-            </template>
-            <v-row justify="space-between">
-              <v-col cols="7" style="color: #333;">1件の誤りがあります。</v-col>
-              <v-col class="text-right" style="color: #333;" cols="5">21:27 JST</v-col>
-            </v-row>
-          </v-timeline-item>
-
-          <v-timeline-item class="mb-4" color="red" small>
-            <v-row justify="space-between">
-              <v-col cols="7">提出 1/3回</v-col>
-              <v-col class="text-right" cols="5">21:25 JST</v-col>
-            </v-row>
-          </v-timeline-item>
-
-          <v-timeline-item color="grey" small>
-            <v-row justify="space-between">
-              <v-col cols="7">競技開始</v-col>
-              <v-col class="text-right" cols="5">21:00 JST</v-col>
-            </v-row>
-          </v-timeline-item>
-        </v-timeline>
-      </v-container>
     </v-card>
   </v-dialog>
 </template>
