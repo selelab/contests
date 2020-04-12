@@ -1,15 +1,23 @@
 <template>
   <div class="contest">
-    <h2>第{{ contestId }}回 オンラインハッカソン</h2>
+    <v-breadcrumbs :items="breadcrumbs"></v-breadcrumbs>
+    <h2>{{contestInfo.title}}</h2>
     <div>
-      開始 2020-4-22 21:00
-      <br />終了 2020-4-22 23:00
+      開始 {{strStartDateTime}}
+      <br />
+      終了 {{strEndDateTime}}
     </div>
     <div>
       <h3>順位表</h3>
-      <v-data-table :headers="headers" :items="desserts" class="elevation-1">
-        <template v-slot:item.teamName="{ item }">
-          <router-link :to="'/' + contestId + '/teams/' + item.teamName">{{ item.teamName }}</router-link>
+      <v-data-table
+        :headers="headers"
+        :items="contestInfo.teams"
+        hide-default-footer
+        class="elevation-1"
+      >
+        <template v-slot:item.name="{ item }">
+          <router-link :to="'/' + contestId + '/teams/' + item.id" v-if="item.id">{{ item.name }}</router-link>
+          <div v-else>{{ item.name }}</div>
         </template>
         <template v-slot:item.points="{ item }">
           <v-chip :color="getColor(item.points)" dark>{{ item.points }}</v-chip>
@@ -28,16 +36,23 @@
 
 <script lang="ts">
 import { Component, Emit, Vue } from "vue-property-decorator";
+import api from "../api";
+import camelcaseKeys from "camelcase-keys";
 
 @Component
 export default class ContestHome extends Vue {
-  contestId = "";
+  contestInfo = {
+    title: null,
+    start: 0,
+    end: 0,
+    teams: []
+  };
   headers = [
     {
       text: "チーム名",
       align: "start",
       sortable: false,
-      value: "teamName"
+      value: "name"
     },
     { text: "合計得点", value: "points" },
     {
@@ -47,28 +62,48 @@ export default class ContestHome extends Vue {
     },
     { text: "最終提出時間", value: "lastSubmissionTime" }
   ];
-  desserts = [
-    {
-      teamName: "アイスクリームサンド	",
-      points: 237,
-      taskIndex: 3,
-      lastSubmissionTime: "1:23"
-    },
-    {
-      teamName: "フローズンヨーグルト",
-      points: 159,
-      taskIndex: 2,
-      lastSubmissionTime: "1:43"
-    },
-    {
-      teamName: "豆腐",
-      points: 56,
-      taskIndex: 1,
-      lastSubmissionTime: "0:31"
-    }
-  ];
   created(): void {
-    this.contestId = this.$route.params.id;
+    (async () => {
+      try {
+        const result = (await api.get(`/v1/contests/${this.contestId}/`)).data;
+        this.contestInfo = result;
+        this.contestInfo.teams = camelcaseKeys(this.contestInfo.teams);
+      } catch (error) {
+        console.log(error);
+      }
+    })();
+  }
+
+  get contestId() {
+    return this.$route.params.id;
+  }
+
+  get strStartDateTime() {
+    return (
+      this.contestInfo.start &&
+      new Date(this.contestInfo.start).toLocaleString()
+    );
+  }
+
+  get strEndDateTime() {
+    return (
+      this.contestInfo.end && new Date(this.contestInfo.end).toLocaleString()
+    );
+  }
+
+  get breadcrumbs() {
+    return [
+      {
+        text: "エレラボ オンラインハッカソン",
+        disabled: false,
+        href: "/contests"
+      },
+      {
+        text: this.contestInfo.title,
+        disabled: true,
+        href: "/contests/" + this.contestId
+      }
+    ];
   }
 
   @Emit("get-color")

@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-app-bar app flat color="primary" dark>
+    <v-app-bar dense flat color="primary" dark>
       <div class="d-flex align-center"></div>
 
       <v-spacer></v-spacer>
@@ -29,6 +29,6 @@ export default Vue.extend({
 <style lang="scss">
 .router-content {
   width: 80%;
-  margin: 50px auto 100px;
+  margin: 5px auto 100px;
 }
 </style>
