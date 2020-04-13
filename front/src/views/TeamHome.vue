@@ -33,47 +33,141 @@
         </v-simple-table>
       </v-card>
       <br />
-      <h4>提出/質問</h4>
+      <h4 id="forms">提出/質問</h4>
       <v-card class="table-card" flat>
-        <v-list-item>
-          <v-list-item-content>
-            <v-list-item-title>提出</v-list-item-title>
-          </v-list-item-content>
-        </v-list-item>
-        <div style="width: 80%; display: inline-block;">
-          <v-select
-            v-model="submitTask"
-            :items="submittableTasks"
-            menu-props="auto"
-            label="Select"
-            hide-details
-            prepend-icon="mdi-flash"
-            single-line
-          ></v-select>
-        </div>
-        <div style="width: 10%; display: inline-block; margin: 0 5%;">
-          <v-btn style="width: 100%; margin: auto">提出</v-btn>
-        </div>
+        <v-alert
+          v-model="alert"
+          :value="!!errorMessage"
+          type="error"
+          style="margin: auto; margin-bottom: 30px"
+          outlined
+          dismissible
+        >{{ errorMessage }}</v-alert>
+        <v-card flat>
+          <v-card-title>提出をする</v-card-title>
+          <v-form ref="submitForm" v-model="submitValid" lazy-validation>
+            <v-list-item>
+              <v-list-item-content>
+                <v-select
+                  v-model="submitTaskId"
+                  :items="submittableTasks"
+                  menu-props="auto"
+                  label="提出する問題"
+                  prepend-icon="mdi-file-multiple"
+                  :rules="[v => !!v || '提出する問題を選択してください。']"
+                  required
+                ></v-select>
+              </v-list-item-content>
+              <v-btn icon>
+                <v-icon @click="clearSelection">mdi-close</v-icon>
+              </v-btn>
+            </v-list-item>
+            <v-card-actions>
+              <v-spacer />
+              <v-btn
+                style="width: 120px; margin: auto"
+                @click="onSubmitClick"
+                :disabled="connecting || !submitValid"
+              >提出</v-btn>
+            </v-card-actions>
+          </v-form>
+        </v-card>
         <v-divider style="margin: 20px 0"></v-divider>
-        <div>
-          <v-textarea v-model="questionText" />
-        </div>
-        <div style="width: 10%; display: inline-block; margin: 0 5%;">
-          <v-btn style="width: 100%; margin: auto">送信</v-btn>
-        </div>
+        <v-card flat>
+          <v-card-title>質問をする・ヒントを頼む</v-card-title>
+          <v-form ref="questionForm" v-model="questionValid" lazy-validation>
+            <v-list-item>
+              <v-list-item-content>
+                <v-select
+                  v-model="submitTaskId"
+                  :items="submittableTasks"
+                  menu-props="auto"
+                  label="質問に関連する問題"
+                  prepend-icon="mdi-file-multiple"
+                ></v-select>
+              </v-list-item-content>
+              <v-btn icon>
+                <v-icon @click="clearSelection">mdi-close</v-icon>
+              </v-btn>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-content>
+                <v-textarea
+                  v-model="questionText"
+                  outlined
+                  solo
+                  flat
+                  rows="7"
+                  :rules="[
+                    v => !!v || '質問を入力してください。',
+                    v => (v && v != this.defaultQuestionText) || '質問を入力してください。',
+                  ]"
+                />
+              </v-list-item-content>
+            </v-list-item>
+            <v-card-actions>
+              <v-spacer />
+              <v-btn
+                style="width: 120px; margin: auto"
+                @click="requestQuestion"
+                :disabled="connecting"
+              >送信</v-btn>
+            </v-card-actions>
+          </v-form>
+        </v-card>
       </v-card>
-      <h4>回答状況</h4>
+      <h4 id="questions">質問の回答一覧</h4>
       <v-card class="table-card" flat>
         <v-data-table
-          :headers="submission_headers"
-          :items="submissions"
+          :headers="questionsHeaders"
+          :items="questions"
           hide-default-footer
+          :items-per-page="questions.length"
           class="elevation-1"
         >
+          <template v-slot:item.task="{ item }">
+            <div>{{getTaskChar(item.task) || "一"}}</div>
+          </template>
           <template v-slot:item.status="{ item }">
             <v-icon :color="getColor(item.status)">{{getIcon(item.status)}}</v-icon>
           </template>
-          <template v-slot:item.score="{ item }">{{item.score || "一"}}</template>
+          <template v-slot:item.commentHTML="{ item }">
+            <div v-html="getCommentHTML(item)"></div>
+          </template>
+          <template v-slot:item.id="{ item }">
+            <a
+              class="gray-link"
+              :href="`/contests/1/questions/${item.id}`"
+              target="_blank"
+              rel="noopener"
+              v-if="!!item.id"
+            >リンク</a>
+          </template>
+          <template v-slot:item.point="{ item }">{{item.point || "一"}}</template>
+          <template v-slot:item.time="{ item }">{{getTimeElapsed(item.dateCreated)}}</template>
+        </v-data-table>
+      </v-card>
+      <br />
+      <h4 id="submissions">提出状況</h4>
+      <v-card class="table-card" flat>
+        <v-data-table
+          :headers="submissionHeaders"
+          :items="submissions"
+          hide-default-footer
+          :items-per-page="submissions.length"
+          class="elevation-1"
+        >
+          <template v-slot:item.task="{ item }">
+            <div>{{getTaskChar(item.task)}}</div>
+          </template>
+          <template v-slot:item.status="{ item }">
+            <v-icon :color="getColor(item.status)">{{getIcon(item.status)}}</v-icon>
+          </template>
+          <template v-slot:item.point="{ item }">{{item.point || "一"}}</template>
+          <template v-slot:item.time="{ item }">{{getTimeElapsed(item.dateCreated)}}</template>
+          <template
+            v-slot:item.count="{ item }"
+          >{{getSubmissionNumber(item)}} / {{maxSubmitNumber}} 回目</template>
         </v-data-table>
       </v-card>
       <br />
@@ -94,6 +188,7 @@ import { Component, Vue, Emit } from "vue-property-decorator";
 import Tasks from "@/components/Tasks.vue";
 import Markdown from "@/components/Markdown.vue";
 import api from "../api";
+import * as utils from "../utils";
 
 @Component({
   components: {
@@ -103,6 +198,8 @@ import api from "../api";
 })
 export default class ContestHome extends Vue {
   tasks = [];
+  errorMessage = "";
+  alert = false;
   snackbar = false;
   snackbarText = "コピーしました";
   teamInfo = {
@@ -111,54 +208,90 @@ export default class ContestHome extends Vue {
     title: null,
     id: null
   };
-
-  submitTask = null;
-  questionText = "### 質問の内容\n\n### 試したこと\n- 箇条書きで書く\n";
-  submission_headers = [
+  connecting = false;
+  submitValid = true;
+  questionValid = true;
+  submitTaskId = null;
+  defaultQuestionText = "### 質問の内容\n\n### 試したこと\n- 箇条書きで書く\n- \n";
+  questionText = this.defaultQuestionText;
+  questionsHeaders = [
     {
       text: "問題番号",
-      value: "taskName"
+      value: "task",
+      width: "100px"
+    },
+    {
+      text: "質問",
+      value: "id",
+      align: "left"
+    },
+    {
+      text: "コメント",
+      value: "commentHTML",
+      align: "left"
+    },
+    {
+      text: "消費ポイント",
+      value: "point",
+      align: "right"
+    },
+    {
+      text: "提出時刻",
+      value: "time",
+      align: "right"
+    },
+    {
+      text: "ステータス",
+      value: "status",
+      align: "right"
+    }
+  ];
+  submissionHeaders = [
+    {
+      text: "問題番号",
+      value: "task",
+      width: "100px"
     },
     {
       text: "得点",
-      value: "score",
-      align: "center"
+      value: "point",
+      align: "right"
     },
     {
       text: "提出回数",
       value: "count",
-      align: "center"
+      align: "right"
     },
     {
       text: "提出時刻",
-      value: "time"
+      value: "time",
+      align: "right"
     },
     {
       text: "ステータス",
-      value: "status"
+      value: "status",
+      align: "right"
+    }
+  ];
+  questions = [
+    {
+      task: "",
+      time: "00:10",
+      id: "",
+      comment: "",
+      point: 0,
+      link: null,
+      status: ""
     }
   ];
   submissions = [
     {
-      taskName: "問題1",
-      score: null,
-      time: "00:10",
-      count: "1 / 3 回目",
-      status: "rejected"
-    },
-    {
-      taskName: "問題1",
-      score: 100,
-      time: "00:13",
-      count: "2 / 3 回目",
-      status: "accepted"
-    },
-    {
-      taskName: "問題2",
-      score: null,
-      time: "00:30",
-      count: "1 / 3 回目",
-      status: "pending"
+      id: "",
+      point: null,
+      time: "",
+      count: "",
+      status: "",
+      task: ""
     }
   ];
   properties = [
@@ -183,8 +316,11 @@ export default class ContestHome extends Vue {
   ];
   contestInfo = {
     id: null,
-    title: null
+    title: null,
+    start: 0,
+    end: 0
   };
+  maxSubmitNumber = 3;
 
   created(): void {
     (async () => {
@@ -202,6 +338,8 @@ export default class ContestHome extends Vue {
         });
         this.tasks = result.contest.tasks;
         this.contestInfo = result.contest;
+        this.submissions = camelcaseKeys(result.submissions);
+        this.questions = camelcaseKeys(result.questions);
       } catch (error) {
         console.log(error);
       }
@@ -217,14 +355,22 @@ export default class ContestHome extends Vue {
   }
 
   get submittableTasks() {
-    return this.tasks.map(
-      (item: { id: string; title: string }, index: number) => {
+    const acceptedTasks = new Set(
+      this.submissions
+        .filter(item => item.status == "accepted")
+        .map(item => item.task)
+    );
+    return this.tasks
+      .map((item: { id: string; title: string }, index: number): {
+        text: string;
+        value: string;
+      } => {
         return {
           text: String.fromCodePoint(index + 65) + "." + item.title,
           value: item.id
         };
-      }
-    );
+      })
+      .filter(item => !acceptedTasks.has(item.value));
   }
 
   get breadcrumbs() {
@@ -259,21 +405,134 @@ export default class ContestHome extends Vue {
     this.snackbarText = "コピーしました";
   }
 
+  @Emit("on-submit-click")
+  onSubmitClick() {
+    const isContestFinished = () =>
+      new Date().getTime() > new Date(this.contestInfo.end).getTime();
+    const numSubmits = () =>
+      this.submissions.filter(item => item.task == this.submitTaskId).length;
+    const isPendingExists = () =>
+      this.submissions
+        .filter(item => item.task == this.submitTaskId)
+        .some(item => item.status == "pending");
+    const isAcceptedExists = () =>
+      this.submissions
+        .filter(item => item.task == this.submitTaskId)
+        .some(item => item.status == "accepted");
+
+    if (
+      !(this.$refs.submitForm as Vue & { validate: () => boolean }).validate()
+    )
+      return;
+
+    this.errorMessage = "";
+    this.alert = false;
+    if (isContestFinished())
+      this.errorMessage = "コンテストは終了しました。お疲れ様でした。";
+    else if (numSubmits() >= this.maxSubmitNumber)
+      this.errorMessage = "提出は3回までしかできません。";
+    else if (isPendingExists())
+      this.errorMessage = "審議中の問題は提出できません。";
+    else if (isAcceptedExists())
+      this.errorMessage = "解答が完了した問題は提出できません。";
+
+    if (this.errorMessage) {
+      this.alert = true;
+      document.getElementById("forms").scrollIntoView({
+        behavior: "smooth"
+      });
+      return;
+    }
+
+    (async () => {
+      try {
+        this.connecting = true;
+        const response = await api.post("/v1/submissions/", {
+          task: this.submitTaskId,
+          team: this.teamId
+        });
+        this.submissions.push(camelcaseKeys(response.data));
+        document.getElementById("submissions").scrollIntoView({
+          behavior: "smooth"
+        });
+      } catch (error) {
+        this.requestErrorHandler(error);
+      }
+      this.connecting = false;
+    })();
+  }
+
+  @Emit("request-question")
+  requestQuestion() {
+    if (
+      !(this.$refs.questionForm as Vue & { validate: () => boolean }).validate()
+    )
+      return;
+
+    (async () => {
+      try {
+        this.connecting = true;
+        const response = await api.post("/v1/questions/", {
+          task: this.submitTaskId,
+          team: this.teamId,
+          text: this.questionText
+        });
+        this.submissions.push(camelcaseKeys(response.data));
+        document.getElementById("questions").scrollIntoView({
+          behavior: "smooth"
+        });
+      } catch (error) {
+        this.requestErrorHandler(error);
+      }
+      this.connecting = false;
+    })();
+  }
+
+  @Emit("clear-selection")
+  clearSelection() {
+    this.submitTaskId = null;
+  }
+
+  @Emit("error-handler")
+  requestErrorHandler(error) {
+    if (error.response) {
+      const message = utils.getErrorMessage(error.response.code);
+      if (message) {
+        this.errorMessage = message;
+        this.alert = true;
+        document.getElementById("forms").scrollIntoView({
+          behavior: "smooth"
+        });
+      }
+    }
+  }
+
+  @Emit("get-submission-number")
+  getSubmissionNumber(target) {
+    const counter = new Proxy(
+      {},
+      {
+        get: (t, name) => (name in t ? t[name] : 0)
+      }
+    );
+    const summary = this.submissions
+      .filter(item => item.task == target.task)
+      .reduce(function(acc, item) {
+        acc[item.id] = ++counter[item.task];
+        return acc;
+      }, {});
+    return summary[target.id];
+  }
+
   @Emit("shorten")
   shorten(text: string, len?: number) {
-    const maxLength = 32;
-    if (!text) return "";
-    if (text.length > (len || maxLength)) {
-      return text.substr(0, len || maxLength) + "...";
-    } else {
-      return text;
-    }
+    return utils.shorten(text, len);
   }
 
   @Emit("get-icon")
   getIcon(status: string) {
     if (status == "accepted") return "mdi-check";
-    else if (status == "pending") return "mdi-circle-medium";
+    else if (status == "pending") return "mdi-timer-sand-full";
     else return "mdi-cancel";
   }
 
@@ -283,6 +542,27 @@ export default class ContestHome extends Vue {
     else if (status == "pending") return "orange";
     else return "red";
   }
+
+  @Emit("get-task-char")
+  getTaskChar(id: string) {
+    if (!id) return "";
+    const index = this.tasks.findIndex(seek => seek.id == id);
+    return String.fromCodePoint(index + 65);
+  }
+
+  @Emit("get-comment-html")
+  getCommentHTML(item: { comment: string; link: string }) {
+    if (!item.comment) return "";
+    return item.comment.replace(
+      "%%%HINT%%%",
+      `<a href="${item.link}" target="_blank" rel="noopener">ヒント</a> `
+    );
+  }
+
+  @Emit("get-time-elapsed")
+  getTimeElapsed(strDateTime: string) {
+    return utils.getTimeElapsed(this.contestInfo.start, strDateTime);
+  }
 }
 </script>
 
@@ -291,5 +571,9 @@ export default class ContestHome extends Vue {
   width: 80%;
   margin: 10px 0;
   padding: 10px 20px;
+}
+
+.gray-link {
+  color: gray !important;
 }
 </style>

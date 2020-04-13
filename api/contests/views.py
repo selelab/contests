@@ -4,8 +4,8 @@ from rest_framework import filters, permissions, viewsets
 
 from web import settings
 
-from .models import Contests, Teams, Tasks
-from .serializer import ContestsSerializer, TeamsSerializer, TeamsDetailSerializer, TasksSerializer
+from .models import Contests, Teams, Tasks, TaskSubmissions, Questions
+from .serializer import ContestsSerializer, TeamsSerializer, TeamsDetailSerializer, TasksSerializer, TaskSubmissionsSerializer, QuestionsSerializer
 
 
 class ListContestsViewSet(viewsets.ModelViewSet):
@@ -24,3 +24,25 @@ class ListTeamsViewSet(viewsets.ModelViewSet):
 class ListTasksViewSet(viewsets.ModelViewSet):
     serializer_class = TasksSerializer
     queryset = Tasks.objects.all()
+
+class TaskSubmissionsViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskSubmissionsSerializer
+    queryset = TaskSubmissions.objects.all()
+
+    def get_queryset(self):
+        team = self.request.GET.get('team')
+        if team:
+            return TaskSubmissions.objects.filter(team=team)
+        else:
+            return self.queryset
+
+class QuestionsViewSet(viewsets.ModelViewSet):
+    serializer_class = QuestionsSerializer
+    queryset = Questions.objects.all()
+
+    def get_queryset(self):
+        team = self.request.GET.get('team')
+        if team:
+            return Questions.objects.filter(team=team)
+        else:
+            return self.queryset

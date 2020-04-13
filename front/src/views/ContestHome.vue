@@ -29,15 +29,21 @@
           </v-chip>
           <div v-else style="text-align: center">{{ item.taskIndex }}</div>
         </template>
+        <template
+          v-slot:item.lastSubmissionTime="{ item }"
+        >{{getTimeElapsed(item.lastSubmissionTime)}}</template>
       </v-data-table>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Emit, Vue } from "vue-property-decorator";
-import api from "../api";
 import camelcaseKeys from "camelcase-keys";
+
+import { Component, Emit, Vue } from "vue-property-decorator";
+
+import api from "../api";
+import * as utils from "../utils";
 
 @Component
 export default class ContestHome extends Vue {
@@ -54,13 +60,21 @@ export default class ContestHome extends Vue {
       sortable: false,
       value: "name"
     },
-    { text: "合計得点", value: "points" },
+    {
+      text: "合計得点",
+      value: "points",
+      align: "center"
+    },
     {
       text: "解答数",
       align: "center",
       value: "taskIndex"
     },
-    { text: "最終提出時間", value: "lastSubmissionTime" }
+    {
+      text: "最終提出時間",
+      value: "lastSubmissionTime",
+      align: "center"
+    }
   ];
   created(): void {
     (async () => {
@@ -111,6 +125,11 @@ export default class ContestHome extends Vue {
     if (points > 200) return "red";
     else if (points > 100) return "orange";
     else return "green";
+  }
+
+  @Emit("get-time-elapsed")
+  getTimeElapsed(strDateTime: string) {
+    return utils.getTimeElapsed(this.contestInfo.start, strDateTime) || "一";
   }
 }
 </script>

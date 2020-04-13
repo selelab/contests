@@ -21,11 +21,11 @@ django-environ = "*"
 pymysql = "*"
 django-rest-swagger = "*"
 drf-yasg = "*"
+drf-writable-nested = "*"
 django-redis-sessions = "*"
 uwsgi = "*"
 django-cors-headers = "*"
 djangorestframework-jwt = "*"
-drf-extensions = "*"
 
 [pipenv]
 allow_prereleases = true

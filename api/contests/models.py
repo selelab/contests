@@ -50,8 +50,24 @@ class TaskSubmissions(models.Model):
     task = models.ForeignKey(Tasks, on_delete=models.CASCADE)
     team = models.ForeignKey(Teams, on_delete=models.CASCADE)
     status = models.CharField(max_length=50, default="pending")
-    point = models.IntegerField(default=0)
+    point = models.IntegerField(null=True)
     date_created = models.DateTimeField(default=utils.timezone.now, editable=False)
+
     class Meta:
         db_table = "submissions"
+        ordering = ['-date_created', 'id']
+
+class Questions(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    team = models.ForeignKey(Teams, on_delete=models.CASCADE)
+    task = models.ForeignKey(Tasks, on_delete=models.CASCADE, null=True)
+    text = models.CharField(max_length=2048)
+    comment = models.CharField(max_length=512, null=True)
+    status = models.CharField(max_length=50, default="pending")
+    point = models.IntegerField(null=True)
+    link = models.CharField(max_length=2048, null=True)
+    date_created = models.DateTimeField(default=utils.timezone.now, editable=False)
+
+    class Meta:
+        db_table = "questions"
         ordering = ['-date_created', 'id']
