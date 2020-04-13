@@ -4,15 +4,17 @@ from rest_framework import filters, permissions, viewsets
 
 from web import settings
 
-from .models import Contests, Teams, Tasks, TaskSubmissions, Questions
-from .serializer import ContestsSerializer, TeamsSerializer, CreateTeamsSerializer, TeamsDetailSerializer, TasksSerializer, TaskSubmissionsSerializer, QuestionsSerializer
+from .models import Contests, Teams, Tasks, TaskSubmissions, Questions, ContestsTasks
+from .serializer import ContestsSerializer, TeamsSerializer, CreateTeamsSerializer, TeamsDetailSerializer, TasksSerializer, TaskSubmissionsSerializer, QuestionsSerializer, ContestsTasksSerializer
 
 
 class ListContestsViewSet(viewsets.ModelViewSet):
+    http_method_names = settings.DEFAULT_HTTP_METHOD_NAMES
     serializer_class = ContestsSerializer
     queryset = Contests.objects.all()
 
 class ListTeamsViewSet(viewsets.ModelViewSet):
+    http_method_names = settings.DEFAULT_HTTP_METHOD_NAMES
     serializer_class = TeamsSerializer
     queryset = Teams.objects.all()
 
@@ -24,10 +26,12 @@ class ListTeamsViewSet(viewsets.ModelViewSet):
         return self.serializer_class
 
 class ListTasksViewSet(viewsets.ModelViewSet):
+    http_method_names = settings.DEFAULT_HTTP_METHOD_NAMES
     serializer_class = TasksSerializer
     queryset = Tasks.objects.all()
 
 class TaskSubmissionsViewSet(viewsets.ModelViewSet):
+    http_method_names = settings.DEFAULT_HTTP_METHOD_NAMES
     serializer_class = TaskSubmissionsSerializer
     queryset = TaskSubmissions.objects.all()
 
@@ -39,6 +43,7 @@ class TaskSubmissionsViewSet(viewsets.ModelViewSet):
             return self.queryset
 
 class QuestionsViewSet(viewsets.ModelViewSet):
+    http_method_names = settings.DEFAULT_HTTP_METHOD_NAMES
     serializer_class = QuestionsSerializer
     queryset = Questions.objects.all()
 
