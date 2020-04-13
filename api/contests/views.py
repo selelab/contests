@@ -48,3 +48,8 @@ class QuestionsViewSet(viewsets.ModelViewSet):
             return Questions.objects.filter(team=team)
         else:
             return self.queryset
+
+class ContestsTasksViewSet(viewsets.ModelViewSet):
+    http_method_names = settings.DEFAULT_HTTP_METHOD_NAMES
+    serializer_class = ContestsTasksSerializer
+    queryset = ContestsTasks.objects.all()

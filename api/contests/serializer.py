@@ -1,7 +1,7 @@
 from django.db.models import Max, Sum
 from rest_framework import serializers
 
-from .models import Contests, Teams, Tasks, TaskSubmissions, Questions
+from .models import Contests, Teams, Tasks, TaskSubmissions, Questions, ContestsTasks
 
 class ContestsSerializer(serializers.ModelSerializer):
     teams = serializers.SerializerMethodField()
@@ -103,3 +103,8 @@ class QuestionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Questions
         fields = ('id', 'task', 'team', 'text', 'comment', 'link', 'status', 'point', 'date_created')
+
+class ContestsTasksSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContestsTasks
+        fields = ('task', 'contest', 'ordering')
