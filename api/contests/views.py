@@ -5,7 +5,7 @@ from rest_framework import filters, permissions, viewsets
 from web import settings
 
 from .models import Contests, Teams, Tasks, TaskSubmissions, Questions
-from .serializer import ContestsSerializer, TeamsSerializer, TeamsDetailSerializer, TasksSerializer, TaskSubmissionsSerializer, QuestionsSerializer
+from .serializer import ContestsSerializer, TeamsSerializer, CreateTeamsSerializer, TeamsDetailSerializer, TasksSerializer, TaskSubmissionsSerializer, QuestionsSerializer
 
 
 class ListContestsViewSet(viewsets.ModelViewSet):
@@ -19,6 +19,8 @@ class ListTeamsViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return TeamsDetailSerializer
+        elif self.action == 'create':
+            return CreateTeamsSerializer
         return self.serializer_class
 
 class ListTasksViewSet(viewsets.ModelViewSet):

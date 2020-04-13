@@ -53,6 +53,11 @@ class TeamsSerializer(serializers.ModelSerializer):
             Max('date_created'))["date_created__max"]
         return last_submission
 
+class CreateTeamsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Teams
+        fields = ('id', 'name', 'ip_address', 'vs_liveshare_link', 'github_branch_name', 'contest')
+
 class TeamsDetailSerializer(serializers.ModelSerializer):
     contest = serializers.SerializerMethodField()
     submissions = serializers.SerializerMethodField()
