@@ -197,7 +197,12 @@ import * as utils from "../utils";
   }
 })
 export default class ContestHome extends Vue {
-  tasks = [];
+  tasks = [
+    {
+      id: "",
+      title: ""
+    }
+  ];
   errorMessage = "";
   alert = false;
   snackbar = false;
@@ -212,7 +217,8 @@ export default class ContestHome extends Vue {
   submitValid = true;
   questionValid = true;
   submitTaskId = null;
-  defaultQuestionText = "### 質問の内容\n\n### 試したこと\n- 箇条書きで書く\n- \n";
+  defaultQuestionText =
+    "### 質問の内容\n\n### 試したこと\n- 箇条書きで書く\n- \n";
   questionText = this.defaultQuestionText;
   questionsHeaders = [
     {
@@ -438,9 +444,7 @@ export default class ContestHome extends Vue {
 
     if (this.errorMessage) {
       this.alert = true;
-      document.getElementById("forms").scrollIntoView({
-        behavior: "smooth"
-      });
+      utils.scrollToElementById("forms");
       return;
     }
 
@@ -452,9 +456,7 @@ export default class ContestHome extends Vue {
           team: this.teamId
         });
         this.submissions.push(camelcaseKeys(response.data));
-        document.getElementById("submissions").scrollIntoView({
-          behavior: "smooth"
-        });
+        utils.scrollToElementById("submissions");
       } catch (error) {
         this.requestErrorHandler(error);
       }
@@ -477,10 +479,8 @@ export default class ContestHome extends Vue {
           team: this.teamId,
           text: this.questionText
         });
-        this.submissions.push(camelcaseKeys(response.data));
-        document.getElementById("questions").scrollIntoView({
-          behavior: "smooth"
-        });
+        this.questions.push(camelcaseKeys(response.data));
+        utils.scrollToElementById("questions");
       } catch (error) {
         this.requestErrorHandler(error);
       }
@@ -494,34 +494,37 @@ export default class ContestHome extends Vue {
   }
 
   @Emit("error-handler")
-  requestErrorHandler(error) {
+  requestErrorHandler(error: { response: { code: number } }) {
     if (error.response) {
       const message = utils.getErrorMessage(error.response.code);
       if (message) {
         this.errorMessage = message;
         this.alert = true;
-        document.getElementById("forms").scrollIntoView({
-          behavior: "smooth"
-        });
+        utils.scrollToElementById("forms");
       }
     }
   }
 
   @Emit("get-submission-number")
-  getSubmissionNumber(target) {
-    const counter = new Proxy(
+  getSubmissionNumber(target: { id: string; task: string }): number {
+    const counter: { [key: string]: number } = new Proxy(
       {},
       {
-        get: (t, name) => (name in t ? t[name] : 0)
+        get: (t: { [key: string]: number }, name: string) =>
+          name in t ? t[name] : 0
       }
     );
     const summary = this.submissions
       .filter(item => item.task == target.task)
-      .reduce(function(acc, item) {
+      .reduce(function(
+        acc: { [key: string]: number },
+        item: { id: string; task: string }
+      ): { [key: string]: number } {
         acc[item.id] = ++counter[item.task];
         return acc;
-      }, {});
-    return summary[target.id];
+      },
+      {});
+    return summary[target.id] || 0;
   }
 
   @Emit("shorten")

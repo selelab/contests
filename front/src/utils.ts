@@ -51,8 +51,16 @@ function getErrorMessage(statusCode?: number): string {
   return "サーバーにアクセスできませんでした。インターネット接続を確認し、管理者へお問い合わせください。";
 }
 
+function scrollToElementById(id: string) {
+  const ref = document.getElementById(id)
+  if (ref) ref.scrollIntoView({
+    behavior: "smooth"
+  });
+}
+
 export {
   getTimeElapsed,
   shorten,
-  getErrorMessage
+  getErrorMessage,
+  scrollToElementById
 }
