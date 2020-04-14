@@ -1,3 +1,5 @@
+import moment from 'moment';
+
 function getTimeElapsed(start: string | number, strDateTime: string | number): string {
   const t1 = new Date(start).getTime(),
     t2 = new Date(strDateTime).getTime();
@@ -27,6 +29,10 @@ function getTimeElapsed(start: string | number, strDateTime: string | number): s
   portions.push(String(seconds).padStart(2, "0"));
 
   return portions.join(":");
+}
+
+function convertDateToString(original: string | number): string {
+  return moment(new Date(original)).format("YYYY年MM月DD日 HH:mm");
 }
 
 function shorten(text: string, len?: number): string {
@@ -60,6 +66,7 @@ function scrollToElementById(id: string) {
 
 export {
   getTimeElapsed,
+  convertDateToString,
   shorten,
   getErrorMessage,
   scrollToElementById

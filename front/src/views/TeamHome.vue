@@ -92,15 +92,27 @@
             </v-list-item>
             <v-list-item>
               <v-list-item-content>
+                <v-text-field
+                  v-model="questionTitle"
+                  label="タイトル (10文字程度)"
+                  outlined
+                  flat
+                  :rules="[
+                    v => !!v || 'タイトルを入力してください',
+                  ]"
+                />
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-content>
                 <v-textarea
                   v-model="questionText"
                   outlined
-                  solo
+                  label="内容 (Markdown記法)"
                   flat
                   rows="7"
                   :rules="[
-                    v => !!v || '質問を入力してください。',
-                    v => (v && v != this.defaultQuestionText) || '質問を入力してください。',
+                    v => (!!v && (v && v != this.defaultQuestionText)) || '質問を入力してください。',
                   ]"
                 />
               </v-list-item-content>
@@ -141,7 +153,7 @@
               target="_blank"
               rel="noopener"
               v-if="!!item.id"
-            >リンク</a>
+            >{{shorten(item.title, 10)}}</a>
           </template>
           <template v-slot:item.point="{ item }">{{item.point || "一"}}</template>
           <template v-slot:item.time="{ item }">{{getTimeElapsed(item.dateCreated)}}</template>
@@ -178,6 +190,7 @@
       {{ snackbarText }}
       <v-btn color="pink" text @click="snackbar = false">閉じる</v-btn>
     </v-snackbar>
+    <Confirm ref="confirm"></Confirm>
   </div>
 </template>
 
@@ -187,13 +200,16 @@ import { Component, Vue, Emit } from "vue-property-decorator";
 
 import Tasks from "@/components/Tasks.vue";
 import Markdown from "@/components/Markdown.vue";
+import Confirm from "@/components/Confirm.vue";
+
 import api from "../api";
 import * as utils from "../utils";
 
 @Component({
   components: {
     Tasks,
-    Markdown
+    Markdown,
+    Confirm
   }
 })
 export default class ContestHome extends Vue {
@@ -206,6 +222,7 @@ export default class ContestHome extends Vue {
   errorMessage = "";
   alert = false;
   snackbar = false;
+  batchFucntionId: number | null = null;
   snackbarText = "コピーしました";
   teamInfo = {
     vsLiveshareLink: null,
@@ -218,8 +235,9 @@ export default class ContestHome extends Vue {
   questionValid = true;
   submitTaskId = null;
   defaultQuestionText =
-    "### 質問の内容\n\n### 試したこと\n- 箇条書きで書く\n- \n";
+    "### 概要\n\n### 試したこと\n- 箇条書きで書く\n- \n";
   questionText = this.defaultQuestionText;
+  questionTitle = "";
   questionsHeaders = [
     {
       text: "問題番号",
@@ -247,7 +265,7 @@ export default class ContestHome extends Vue {
       align: "right"
     },
     {
-      text: "ステータス",
+      text: "状態",
       value: "status",
       align: "right"
     }
@@ -274,7 +292,7 @@ export default class ContestHome extends Vue {
       align: "right"
     },
     {
-      text: "ステータス",
+      text: "状態",
       value: "status",
       align: "right"
     }
@@ -282,12 +300,12 @@ export default class ContestHome extends Vue {
   questions = [
     {
       task: "",
-      time: "00:10",
       id: "",
       comment: "",
       point: 0,
       link: null,
-      status: ""
+      status: "",
+      title: ""
     }
   ];
   submissions = [
@@ -328,32 +346,57 @@ export default class ContestHome extends Vue {
   };
   maxSubmitNumber = 3;
 
+  async retriveInformation() {
+    try {
+      const result = camelcaseKeys(
+        (await api.get(`/v1/teams/${this.teamId}/`)).data
+      );
+      this.teamInfo.name = result.name;
+      this.properties.forEach(item => {
+        if (item.key) {
+          item.value = result[item.key];
+          if (item.link)
+            item.link = item.link.replace(/<value>/g, result[item.key]);
+        }
+      });
+      this.tasks = result.contest.tasks;
+      this.contestInfo = result.contest;
+      this.submissions = camelcaseKeys(result.submissions);
+      this.questions = camelcaseKeys(result.questions);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   created(): void {
-    (async () => {
-      try {
-        const result = camelcaseKeys(
-          (await api.get(`/v1/teams/${this.teamId}/`)).data
-        );
-        this.teamInfo.name = result.name;
-        this.properties.forEach(item => {
-          if (item.key) {
-            item.value = result[item.key];
-            if (item.link)
-              item.link = item.link.replace(/<value>/g, result[item.key]);
-          }
-        });
-        this.tasks = result.contest.tasks;
-        this.contestInfo = result.contest;
-        this.submissions = camelcaseKeys(result.submissions);
-        this.questions = camelcaseKeys(result.questions);
-      } catch (error) {
-        console.log(error);
+    const curPath = this.$route.path;
+    const sleep = (msec: number) =>
+      new Promise(resolve => setTimeout(resolve, msec));
+    const intervalRepeater = async (
+      callback: { (): void },
+      repeat?: boolean
+    ) => {
+      if (repeat == undefined) repeat = true;
+      while (curPath == this.$route.path && repeat) {
+        let interval = 30 * 1000;
+        if (this.isSubmissionsPendingExists || this.isQuestionsPendingExists)
+          interval = 10 * 1000;
+        await Promise.all([callback(), sleep(interval)]);
       }
-    })();
+    };
+    intervalRepeater(this.retriveInformation);
+  }
+
+  get isSubmissionsPendingExists() {
+    return this.submissions.some(item => item.status == "pending");
+  }
+
+  get isQuestionsPendingExists() {
+    return this.questions.some(item => item.status == "pending");
   }
 
   get contestId() {
-    return this.$route.params.contest_id;
+    return this.$route.params.contestId;
   }
 
   get teamId() {
@@ -468,15 +511,36 @@ export default class ContestHome extends Vue {
   requestQuestion() {
     if (
       !(this.$refs.questionForm as Vue & { validate: () => boolean }).validate()
-    )
+    ) {
+      this.questionText = this.defaultQuestionText;
       return;
+    }
 
     (async () => {
       try {
+        if (
+          !this.submitTaskId &&
+          !(await (this.$refs.confirm as Vue & {
+            open: (
+              title: string,
+              text: string,
+              option: { color: string }
+            ) => Promise<boolean>;
+          }).open(
+            "確認",
+            "問題に関連しない質問は別のチームも閲覧することができます。<br>本当に質問を送信しますか？",
+            {
+              color: "orange"
+            }
+          ))
+        ) {
+          return;
+        }
         this.connecting = true;
         const response = await api.post("/v1/questions/", {
           task: this.submitTaskId,
           team: this.teamId,
+          title: this.questionTitle,
           text: this.questionText
         });
         this.questions.push(camelcaseKeys(response.data));
@@ -556,7 +620,8 @@ export default class ContestHome extends Vue {
   @Emit("get-comment-html")
   getCommentHTML(item: { comment: string; link: string }) {
     if (!item.comment) return "";
-    return item.comment.replace(
+    if (!item.link) return this.shorten(item.comment, 14).replace("%%%HINT%%%", "");
+    return this.shorten(item.comment, 14).replace(
       "%%%HINT%%%",
       `<a href="${item.link}" target="_blank" rel="noopener">ヒント</a> `
     );

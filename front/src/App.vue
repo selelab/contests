@@ -1,7 +1,10 @@
 <template>
   <v-app>
-    <v-app-bar dense flat color="primary" dark>
-      <div class="d-flex align-center"></div>
+    <v-app-bar dense flat hide-on-scroll app color="primary" dark>
+      <img alt="SEL" src="https://selelab.com/SEL_180x180.png" width="20px">
+      <div class="d-flex align-center" style="padding: 0 10px">
+        エレクトロニクスラボ オンラインハッカソン
+      </div>
 
       <v-spacer></v-spacer>
     </v-app-bar>

@@ -12,6 +12,7 @@
     "axios": "^0.19.2",
     "camelcase-keys": "^6.2.2",
     "marked": "^0.8.2",
+    "moment": "^2.24.0",
     "sanitize-html": "^1.22.1",
     "vue": "^2.6.11",
     "vue-clipboard2": "^0.3.1",

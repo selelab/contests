@@ -13,18 +13,22 @@ const routes = [
   {
     path: '/:id',
     name: 'ContenstHome',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '@/views/ContestHome.vue')
+    component: () => import(/* webpackChunkName: "contest_home" */ '@/views/ContestHome.vue')
   },
   {
-    path: '/:contest_id/teams/:id',
+    path: '/:contestId/teams/:id',
     name: 'TeamHome',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '@/views/TeamHome.vue')
+    component: () => import(/* webpackChunkName: "team_home" */ '@/views/TeamHome.vue')
+  },
+  {
+    path: '/hints/:id',
+    name: 'Hint',
+    component: () => import(/* webpackChunkName: "hint" */ '@/views/Hint.vue')
+  },
+  {
+    path: '/:contestId/questions/:id',
+    name: 'Question',
+    component: () => import(/* webpackChunkName: "hint" */ '@/views/Question.vue')
   }
 ]
 
