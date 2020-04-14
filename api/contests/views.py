@@ -1,11 +1,30 @@
 import django_filters
+from django.http import JsonResponse
 from django.shortcuts import render
 from rest_framework import filters, permissions, viewsets
 
 from web import settings
 
-from .models import Contests, Teams, Tasks, TaskSubmissions, Questions, ContestsTasks
-from .serializer import ContestsSerializer, TeamsSerializer, CreateTeamsSerializer, TeamsDetailSerializer, TasksSerializer, TaskSubmissionsSerializer, QuestionsSerializer, ContestsTasksSerializer
+from .models import (
+    Contests,
+    Teams,
+    Tasks,
+    TaskSubmissions,
+    Questions,
+    ContestsTasks,
+    Hints
+)
+from .serializer import (
+    ContestsSerializer,
+    TeamsSerializer,
+    CreateTeamsSerializer,
+    TeamsDetailSerializer,
+    TasksSerializer,
+    TaskSubmissionsSerializer,
+    QuestionsSerializer,
+    ContestsTasksSerializer,
+    HintsSerializer
+)
 
 
 class ListContestsViewSet(viewsets.ModelViewSet):
@@ -24,6 +43,10 @@ class ListTeamsViewSet(viewsets.ModelViewSet):
         elif self.action == 'create':
             return CreateTeamsSerializer
         return self.serializer_class
+
+    def list(self, request):
+        return JsonResponse({'error': 'forbidden'}, status=403)
+
 
 class ListTasksViewSet(viewsets.ModelViewSet):
     http_method_names = settings.DEFAULT_HTTP_METHOD_NAMES
@@ -47,14 +70,20 @@ class QuestionsViewSet(viewsets.ModelViewSet):
     serializer_class = QuestionsSerializer
     queryset = Questions.objects.all()
 
-    def get_queryset(self):
-        team = self.request.GET.get('team')
-        if team:
-            return Questions.objects.filter(team=team)
-        else:
-            return self.queryset
+    def list(self, request):
+        queryset = Questions.objects.filter(task__isnull=True)
+        serializer = self.get_serializer(queryset, many=True)
+        return JsonResponse(serializer.data, safe=False, status=200)
 
 class ContestsTasksViewSet(viewsets.ModelViewSet):
     http_method_names = settings.DEFAULT_HTTP_METHOD_NAMES
     serializer_class = ContestsTasksSerializer
     queryset = ContestsTasks.objects.all()
+
+class HintsViewSet(viewsets.ModelViewSet):
+    http_method_names = settings.DEFAULT_HTTP_METHOD_NAMES
+    serializer_class = HintsSerializer
+    queryset = Hints.objects.all()
+
+    def list(self, request):
+        return JsonResponse({'error': 'forbidden'}, status=403)

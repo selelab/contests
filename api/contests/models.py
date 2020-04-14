@@ -59,6 +59,7 @@ class TaskSubmissions(models.Model):
 
 class Questions(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=512, default="質問")
     team = models.ForeignKey(Teams, on_delete=models.CASCADE)
     task = models.ForeignKey(Tasks, on_delete=models.CASCADE, null=True)
     text = models.CharField(max_length=2048)
@@ -70,4 +71,14 @@ class Questions(models.Model):
 
     class Meta:
         db_table = "questions"
+        ordering = ['-date_created', 'id']
+
+class Hints(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    task = models.ManyToManyField(Tasks, null=True)
+    text = models.CharField(max_length=8192)
+    date_created = models.DateTimeField(default=utils.timezone.now, editable=False)
+
+    class Meta:
+        db_table = "hints"
         ordering = ['-date_created', 'id']

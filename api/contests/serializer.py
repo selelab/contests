@@ -1,7 +1,17 @@
 from django.db.models import Max, Sum
 from rest_framework import serializers
 
-from .models import Contests, Teams, Tasks, TaskSubmissions, Questions, ContestsTasks
+from datetime import datetime
+
+from .models import (
+    Contests,
+    Teams,
+    Tasks,
+    TaskSubmissions,
+    Questions,
+    ContestsTasks,
+    Hints
+)
 
 class ContestsSerializer(serializers.ModelSerializer):
     teams = serializers.SerializerMethodField()
@@ -28,6 +38,7 @@ class ContestsDetailSerializer(serializers.ModelSerializer):
     def get_tasks(self, obj):
         return TasksSerializer(obj.tasks.order_by('conteststasks'), many=True).data
 class TeamsSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
     points = serializers.SerializerMethodField()
     task_index = serializers.SerializerMethodField()
     last_submission_time = serializers.SerializerMethodField()
@@ -36,11 +47,31 @@ class TeamsSerializer(serializers.ModelSerializer):
         model = Teams
         fields = ('id', 'name', 'points', 'task_index', 'last_submission_time')
 
+    def get_id(self, obj):
+        now = datetime.now()
+        if (obj.contest.end.second > now.second):
+            return obj.id
+        else:
+            return None
+
     def get_points(self, obj):
-        sum_points = TaskSubmissions.objects.filter(
-            team=obj.id).aggregate(
-            Sum('point'))["point__sum"]
-        return sum_points or 0
+        submissions = TaskSubmissionsSerializer(
+            TaskSubmissions.objects.filter(
+                team=obj.id
+            ).order_by(
+                'date_created'
+            ), many=True
+        ).data
+
+        point = 0
+        for submission in submissions:
+            if (submission["point"]):
+                sum_points_used = Questions.objects.filter(
+                    team=obj.id, task=submission["task"]).aggregate(
+                    Sum('point'))["point__sum"]
+                point += max(0, submission["point"] - (sum_points_used or 0))
+
+        return point
 
     def get_task_index(self, obj):
         sum_points = TaskSubmissions.objects.filter(
@@ -73,7 +104,7 @@ class TeamsDetailSerializer(serializers.ModelSerializer):
 
     def get_submissions(self, obj):
         return TaskSubmissionsSerializer(
-            TaskSubmissions.objects.all().filter(
+            TaskSubmissions.objects.filter(
                 team=obj.id
             ).order_by(
                 'date_created'
@@ -82,7 +113,7 @@ class TeamsDetailSerializer(serializers.ModelSerializer):
 
     def get_questions(self, obj):
         return QuestionsSerializer(
-            Questions.objects.all().filter(
+            Questions.objects.filter(
                 team=obj.id
             ).order_by(
                 'date_created'
@@ -102,9 +133,14 @@ class TaskSubmissionsSerializer(serializers.ModelSerializer):
 class QuestionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Questions
-        fields = ('id', 'task', 'team', 'text', 'comment', 'link', 'status', 'point', 'date_created')
+        fields = ('id', 'task', 'team', 'title', 'text', 'comment', 'link', 'status', 'point', 'date_created')
 
 class ContestsTasksSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContestsTasks
         fields = ('task', 'contest', 'ordering')
+
+class HintsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hints
+        fields = ('id', 'task', 'text', 'date_created')
