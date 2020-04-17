@@ -184,7 +184,7 @@
       </v-card>
       <br />
       <h4>問題</h4>
-      <Tasks :tasks="tasks"></Tasks>
+      <Tasks :tasks="tasks" v-bind:submittableTasks="submittableTasks"></Tasks>
     </div>
     <v-snackbar v-model="snackbar">
       {{ snackbarText }}
@@ -234,8 +234,7 @@ export default class ContestHome extends Vue {
   submitValid = true;
   questionValid = true;
   submitTaskId = null;
-  defaultQuestionText =
-    "### 概要\n\n### 試したこと\n- 箇条書きで書く\n- \n";
+  defaultQuestionText = "### 概要\n\n### 試したこと\n- 箇条書きで書く\n- \n";
   questionText = this.defaultQuestionText;
   questionTitle = "";
   questionsHeaders = [
@@ -419,7 +418,12 @@ export default class ContestHome extends Vue {
           value: item.id
         };
       })
-      .filter(item => !acceptedTasks.has(item.value));
+      .filter(
+        item =>
+          !acceptedTasks.has(item.value) &&
+          this.submissions.filter(filItem => item.value == filItem.task)
+            .length < this.maxSubmitNumber
+      );
   }
 
   get breadcrumbs() {
@@ -479,7 +483,7 @@ export default class ContestHome extends Vue {
     if (isContestFinished())
       this.errorMessage = "コンテストは終了しました。お疲れ様でした。";
     else if (numSubmits() >= this.maxSubmitNumber)
-      this.errorMessage = "提出は3回までしかできません。";
+      this.errorMessage = `提出は${this.maxSubmitNumber}回までしかできません。`;
     else if (isPendingExists())
       this.errorMessage = "審議中の問題は提出できません。";
     else if (isAcceptedExists())
@@ -493,6 +497,24 @@ export default class ContestHome extends Vue {
 
     (async () => {
       try {
+        if (
+          numSubmits() == this.maxSubmitNumber - 1 &&
+          !(await (this.$refs.confirm as Vue & {
+            open: (
+              title: string,
+              text: string,
+              option: { color: string }
+            ) => Promise<boolean>;
+          }).open(
+            "確認",
+            "この問題最後の提出となります。これ以降再提出はできません。<br>本当に提出しますか？",
+            {
+              color: "red"
+            }
+          ))
+        ) {
+          return;
+        }
         this.connecting = true;
         const response = await api.post("/v1/submissions/", {
           task: this.submitTaskId,
@@ -620,7 +642,8 @@ export default class ContestHome extends Vue {
   @Emit("get-comment-html")
   getCommentHTML(item: { comment: string; link: string }) {
     if (!item.comment) return "";
-    if (!item.link) return this.shorten(item.comment, 14).replace("%%%HINT%%%", "");
+    if (!item.link)
+      return this.shorten(item.comment, 14).replace("%%%HINT%%%", "");
     return this.shorten(item.comment, 14).replace(
       "%%%HINT%%%",
       `<a href="${item.link}" target="_blank" rel="noopener">ヒント</a> `

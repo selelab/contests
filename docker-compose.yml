@@ -30,6 +30,7 @@ services:
       - default
       - db_sharing
       - admin_default
+    restart: always
 networks:
   db_sharing:
     external: true
