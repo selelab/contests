@@ -20,19 +20,10 @@ services:
     entrypoint:
       - /bin/sh
       - entrypoint.sh
-    expose:
-      - "8001"
+    ports:
+      - "8002:8001"
     volumes:
       - ./api/:/var/app/
       - ./static/:/var/static
       - ./log/django/:/var/log/django/
-    networks:
-      - default
-      - db_sharing
-      - admin_default
     restart: always
-networks:
-  db_sharing:
-    external: true
-  admin_default:
-    external: true
