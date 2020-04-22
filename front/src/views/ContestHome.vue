@@ -155,7 +155,7 @@ export default class ContestHome extends Vue {
     }
   ];
 
-  async retriveInformation() {
+  async retrieveInformation() {
     try {
       const result = (await api.get(`/v1/contests/${this.contestId}/`)).data;
       this.contestInfo = result;
@@ -181,7 +181,7 @@ export default class ContestHome extends Vue {
         await Promise.all([callback(), sleep(interval)]);
       }
     };
-    intervalRepeater(this.retriveInformation);
+    intervalRepeater(this.retrieveInformation);
   }
 
   get contestId() {

@@ -29,7 +29,7 @@ export default class ContestHome extends Vue {
     title: null
   };
 
-  async retriveInformation() {
+  async retrieveInformation() {
     try {
       this.questionInfo = (await api.get(`/v1/questions/${this.questionId}/`)).data;
       this.contestInfo = (await api.get(`/v1/contests/${this.contestId}/`)).data;
@@ -39,7 +39,7 @@ export default class ContestHome extends Vue {
   }
 
   created(): void {
-    this.retriveInformation();
+    this.retrieveInformation();
   }
 
   get questionId() {

@@ -19,7 +19,7 @@ import api from "../api";
 export default class ContestHome extends Vue {
   text = "";
 
-  async retriveInformation() {
+  async retrieveInformation() {
     try {
       const result = (await api.get(`/v1/hints/${this.hintId}/`)).data;
       this.text = result.text;
@@ -29,7 +29,7 @@ export default class ContestHome extends Vue {
   }
 
   created(): void {
-    this.retriveInformation();
+    this.retrieveInformation();
   }
 
   get hintId() {

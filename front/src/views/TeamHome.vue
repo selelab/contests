@@ -345,7 +345,7 @@ export default class ContestHome extends Vue {
   };
   maxSubmitNumber = 3;
 
-  async retriveInformation() {
+  async retrieveInformation() {
     try {
       const result = camelcaseKeys(
         (await api.get(`/v1/teams/${this.teamId}/`)).data
@@ -383,7 +383,7 @@ export default class ContestHome extends Vue {
         await Promise.all([callback(), sleep(interval)]);
       }
     };
-    intervalRepeater(this.retriveInformation);
+    intervalRepeater(this.retrieveInformation);
   }
 
   get isSubmissionsPendingExists() {
