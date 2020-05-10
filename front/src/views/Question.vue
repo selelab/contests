@@ -24,15 +24,19 @@ export default class ContestHome extends Vue {
   questionInfo = {
     comment: "",
     text: ""
-  }
+  };
   contestInfo = {
     title: null
   };
 
   async retrieveInformation() {
     try {
-      this.questionInfo = (await api.get(`/v1/questions/${this.questionId}/`)).data;
-      this.contestInfo = (await api.get(`/v1/contests/${this.contestId}/`)).data;
+      this.questionInfo = (
+        await api.get(`/v1/questions/${this.questionId}/`)
+      ).data;
+      this.contestInfo = (
+        await api.get(`/v1/contests/${this.contestId}/`)
+      ).data;
     } catch (error) {
       console.log(error);
     }
@@ -65,7 +69,7 @@ export default class ContestHome extends Vue {
       {
         text: "質問",
         disabled: true,
-        href: "/contests/" + this.contestId + '/questions/' + this.questionId
+        href: "/contests/" + this.contestId + "/questions/" + this.questionId
       }
     ];
   }
