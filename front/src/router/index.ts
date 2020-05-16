@@ -11,6 +11,11 @@ const routes = [
     component: Home
   },
   {
+    path: '/tasks/:id',
+    name: 'Task',
+    component: () => import(/* webpackChunkName: "hint" */ '@/views/Task.vue')
+  },
+  {
     path: '/:id',
     name: 'ContenstHome',
     component: () => import(/* webpackChunkName: "contest_home" */ '@/views/ContestHome.vue')

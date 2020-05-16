@@ -7,6 +7,9 @@ import VueClipboard from 'vue-clipboard2'
 
 Vue.use(VueClipboard)
 
+import VueCompositionApi from "@vue/composition-api";
+Vue.use(VueCompositionApi);
+
 Vue.config.productionTip = false
 
 new Vue({
