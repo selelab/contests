@@ -16,6 +16,13 @@
             <v-spacer />
             <v-btn class="my-3" @click="runCode">実行</v-btn>
           </v-list-item>
+          <v-card-text v-if="codeLog">
+            <h4 class="my-3">コンソール出力</h4>
+            <div v-for="(log, key) in codeLog" :key="key">
+              {{ log.strStack }}
+              <editor v-model="log.message" :editable="false" :maxLines="5" :showGutter="false" v-if="log" />
+            </div>
+          </v-card-text>
           <v-card-text v-if="codeResult">
             <h4 class="my-3">実行結果</h4>
             <editor v-model="codeResult" :editable="false" />
@@ -38,9 +45,8 @@
 </template>
 
 <script lang='ts'>
-import { defineComponent, ref, Ref } from "@vue/composition-api";
+import { defineComponent, ref, Ref, computed } from "@vue/composition-api";
 import Editor from "@/components/Editor.vue";
-import axios from "axios";
 
 const initialCode = `function filterByName(data) {
   console.log('hoge');
@@ -89,38 +95,91 @@ export default defineComponent({
   },
   setup() {
     const code = ref(initialCode);
-    const codeResult = ref("");
+    const execInfo: Ref<{
+      result: string;
+      logData: {
+        message: string;
+        stack: { name: string; line: number; column: number }[];
+      }[];
+    } | null> = ref(null);
     const codeError: Ref<Error | null> = ref(null);
     const params = ref(initialParams);
     const entrypoint = "filterByName";
 
+    const codeResult = computed(
+      () => execInfo.value && JSON.stringify(execInfo.value.result, null, "  ")
+    );
+    const codeLog = computed(() => {
+      if (!(execInfo.value && execInfo.value.logData && execInfo.value.logData.length)) return null;
+      return execInfo.value.logData.map(item => {
+        const { message, stack } = item;
+        return {
+          message: JSON.stringify(message, null, "  "),
+          strStack: stack.reduce((acc, item) => {
+            if (!acc) return `@${item.name}:${item.line}:${item.column}`;
+            return `(${acc})@${item.name}:${item.line}:${item.column}`;
+          }, "")
+        };
+      });
+    });
+
     const runCode = function() {
-      codeResult.value = "";
+      const prefixLines = 3;
+      execInfo.value = null;
       codeError.value = null;
+      const oldLog = console.log;
       try {
         const sandboxPrefix = `const oldLog = console.log;
-        const loggedValues = [];
-        const altLogger = (message) => {
-            let obj = {};
-            Error.captureStackTrace(obj, altLogger);
-            const stack = obj.stack.split('\\n').slice(1);
-            loggedValues.push({ message, stack });
-            oldLog(message);
+        const makeLogger = (entrypoint, logData) => ((message) => {
+          try {
+            throw Error('');
+          } catch(error) {
+            const stack = error.stack.split('\\n');
+            const epIndex = stack && stack.findIndex(
+              (item) => (item.match(entrypoint.name))
+            );
+            const scopedStack = stack.slice(0, epIndex + 1).map(
+              (item) => {
+                 const [, line, column] = item.match(/:(\\d+):(\\d+)/) || [0, 2, -1];
+                 return { name: item.replace('    at ', '').split(/[ \\/@]/)[0], line: parseInt(line) - ${prefixLines}, column: parseInt(column) }
+              }
+            ).filter(
+              (item) => (item.line > 0)
+            );
+
+            const data = { message, stack: scopedStack };
+            logData.push(data);
+            const strScopedStack = scopedStack.reduce(
+              (acc, item) => {
+                if (!acc) return \`@\${item.name}:\${item.line}:\${item.column}\`;
+                return \`(\${acc})@\${item.name}:\${item.line}:\${item.column}\`;
+              },
+              ''
+            );
+            oldLog(\`\${data.message} \${strScopedStack}\`);
+          }
+        });
+
+        const evaluater = (entrypoint) => (...value) => {
+          const logData = new Array();
+          const logger = makeLogger(entrypoint, logData);
+          console.log = logger;
+          const data = { result: entrypoint(...value), logData };
+          console.log = oldLog;
+          return data;
         };
-        window.console.log = altLogger;
-        const evaluater = (entrypoint) => (...value) => { return { result: entrypoint(...value), loggedValues } };
         `;
-        const sandboxCode = `'use strict';${sandboxPrefix}${code.value};return(evaluater(${entrypoint}))`;
-        const sandboxFunc = Function(sandboxCode)({ axios });
+        const sandboxCode = `'use strict';${sandboxPrefix.replace(
+          /\n/g,
+          ""
+        )};\n${code.value};return(evaluater(${entrypoint}))`;
+        const sandboxFunc = Function(sandboxCode)();
         const sandboxParams = Object.values(params.value).map(value => {
           return Function(`'use strict';return(${value})`)();
         });
-        codeResult.value = JSON.stringify(
-          sandboxFunc(...sandboxParams),
-          null,
-          "  "
-        );
+        execInfo.value = sandboxFunc(...sandboxParams);
       } catch (error) {
+        console.log = oldLog;
         if (error instanceof Error) {
           codeError.value = error;
         } else {
@@ -132,6 +191,7 @@ export default defineComponent({
     return {
       codeResult,
       codeError,
+      codeLog,
       runCode,
       entrypoint,
       code,

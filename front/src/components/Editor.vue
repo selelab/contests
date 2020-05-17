@@ -12,6 +12,8 @@ import "brace/theme/monokai";
 type Props = {
   value: string;
   editable: boolean;
+  showGutter: boolean;
+  maxLines: number;
 };
 
 export default defineComponent({
@@ -23,6 +25,14 @@ export default defineComponent({
     editable: {
       type: Boolean,
       default: true
+    },
+    showGutter: {
+      type: Boolean,
+      default: true
+    },
+    maxLines: {
+      type: Number,
+      default: 30
     }
   },
   setup(props: Props, { emit }) {
@@ -34,7 +44,8 @@ export default defineComponent({
     onMounted(() => {
       const editor = ace.edit(randomId);
       editor.setOptions({
-        maxLines: 30,
+        maxLines: props.maxLines,
+        showGutter: props.showGutter,
         mode: "ace/mode/javascript",
         tabSize: 2,
         useSoftTabs: true,
