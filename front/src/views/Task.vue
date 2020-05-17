@@ -140,8 +140,9 @@ export default defineComponent({
             );
             const scopedStack = stack.slice(0, epIndex + 1).map(
               (item) => {
-                 const [, line, column] = item.match(/:(\\d+):(\\d+)/) || [0, 2, -1];
-                 return { name: item.replace('    at ', '').split(/[ \\/@]/)[0], line: parseInt(line) - ${prefixLines}, column: parseInt(column) }
+                const match = item.match(/(?<=<anonymous>):(?<line>\\d+):(?<column>\\d+)/);
+                const { line, column } = (match && match.groups) || { line: 2, column: -1 };
+                return { name: item.replace('    at ', '').split(/[ \\/@]/)[0], line: parseInt(line) - ${prefixLines}, column: parseInt(column) }
               }
             ).filter(
               (item) => (item.line > 0)
