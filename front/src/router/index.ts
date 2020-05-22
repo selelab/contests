@@ -11,9 +11,9 @@ const routes = [
     component: Home
   },
   {
-    path: '/tasks/:id',
+    path: '/poc/code-editor',
     name: 'Task',
-    component: () => import(/* webpackChunkName: "hint" */ '@/views/Task.vue')
+    component: () => import(/* webpackChunkName: "code-editor" */ '@/views/Task.vue')
   },
   {
     path: '/:id',
