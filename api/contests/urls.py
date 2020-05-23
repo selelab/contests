@@ -7,7 +7,8 @@ from .views import (
     TaskSubmissionsViewSet,
     QuestionsViewSet,
     ContestsTasksViewSet,
-    HintsViewSet
+    HintsViewSet,
+    DataSetsViewSet
 )
 
 router = routers.DefaultRouter()
@@ -16,5 +17,6 @@ router.register(r'teams', ListTeamsViewSet)
 router.register(r'tasks', ListTasksViewSet)
 router.register(r'submissions', TaskSubmissionsViewSet)
 router.register(r'questions', QuestionsViewSet)
-router.register(r'task_ordering', ContestsTasksViewSet)
+router.register(r'task-ordering', ContestsTasksViewSet)
 router.register(r'hints', HintsViewSet)
+router.register(r'data-sets', DataSetsViewSet)

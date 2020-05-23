@@ -10,7 +10,8 @@ from .models import (
     TaskSubmissions,
     Questions,
     ContestsTasks,
-    Hints
+    Hints,
+    DataSets
 )
 
 class ContestsSerializer(serializers.ModelSerializer):
@@ -144,3 +145,9 @@ class HintsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hints
         fields = ('id', 'task', 'text', 'date_created')
+
+
+class DataSetsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataSets
+        fields = ('id', 'title', 'json_data')

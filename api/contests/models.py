@@ -82,3 +82,8 @@ class Hints(models.Model):
     class Meta:
         db_table = "hints"
         ordering = ['-date_created', 'id']
+
+class DataSets(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=512)
+    json_data = models.TextField(max_length=65536, null=True)

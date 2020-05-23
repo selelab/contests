@@ -12,7 +12,8 @@ from .models import (
     TaskSubmissions,
     Questions,
     ContestsTasks,
-    Hints
+    Hints,
+    DataSets
 )
 from .serializer import (
     ContestsSerializer,
@@ -23,7 +24,8 @@ from .serializer import (
     TaskSubmissionsSerializer,
     QuestionsSerializer,
     ContestsTasksSerializer,
-    HintsSerializer
+    HintsSerializer,
+    DataSetsSerializer
 )
 
 
@@ -87,3 +89,9 @@ class HintsViewSet(viewsets.ModelViewSet):
 
     def list(self, request):
         return JsonResponse({'error': 'forbidden'}, status=403)
+
+
+class DataSetsViewSet(viewsets.ModelViewSet):
+    http_method_names = settings.DEFAULT_HTTP_METHOD_NAMES
+    serializer_class = DataSetsSerializer
+    queryset = DataSets.objects.all()
